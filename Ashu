@@ -1,0 +1,64 @@
+// Project structure: // /client - React frontend // /server - Node.js + Express backend
+
+// --- /server/index.js --- const express = require('express'); const cors = require('cors'); const mongoose = require('mongoose'); require('dotenv').config();
+
+const app = express(); app.use(cors()); app.use(express.json());
+
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true }) .then(() => console.log('MongoDB connected')) .catch(err => console.error(err));
+
+// Product schema const Product = mongoose.model('Product', new mongoose.Schema({ name: String, description: String, price: Number, image: String }));
+
+// Routes app.get('/api/products', async (req, res) => { const products = await Product.find(); res.json(products); });
+
+app.post('/api/contact', (req, res) => { console.log('Contact Form Submission:', req.body); res.json({ message: 'Form submitted!' }); });
+
+app.post('/api/newsletter', (req, res) => { console.log('Newsletter Signup:', req.body.email); res.json({ message: 'Subscribed!' }); });
+
+app.listen(5000, () => console.log('Server running on port 5000'));
+
+// --- /client/src/App.jsx --- import React, { useEffect, useState } from 'react'; import axios from 'axios';
+
+function App() { const [products, setProducts] = useState([]); const [email, setEmail] = useState(''); const [contact, setContact] = useState({ name: '', message: '' });
+
+useEffect(() => { axios.get('http://localhost:5000/api/products') .then(res => setProducts(res.data)); }, []);
+
+const handleNewsletter = () => { axios.post('http://localhost:5000/api/newsletter', { email }); };
+
+const handleContact = () => { axios.post('http://localhost:5000/api/contact', contact); };
+
+return ( <div className="p-6 text-center"> <header className="bg-red-600 text-white p-4 text-3xl font-bold">Coca-Cola Style</header>
+
+<section className="my-6">
+    <h2 className="text-xl font-semibold mb-4">Our Products</h2>
+    <div className="grid grid-cols-2 gap-4">
+      {products.map(p => (
+        <div key={p._id} className="border p-4">
+          <img src={p.image} alt={p.name} className="w-full h-40 object-cover" />
+          <h3 className="text-lg font-bold">{p.name}</h3>
+          <p>{p.description}</p>
+          <p className="text-red-600 font-semibold">${p.price}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section className="my-6">
+    <h2 className="text-xl font-semibold mb-4">Contact Us</h2>
+    <input placeholder="Your Name" className="border p-2 m-2" onChange={e => setContact({ ...contact, name: e.target.value })} />
+    <textarea placeholder="Message" className="border p-2 m-2" onChange={e => setContact({ ...contact, message: e.target.value })}></textarea>
+    <button className="bg-red-600 text-white px-4 py-2" onClick={handleContact}>Submit</button>
+  </section>
+
+  <section className="my-6">
+    <h2 className="text-xl font-semibold mb-4">Newsletter</h2>
+    <input type="email" placeholder="Email" className="border p-2 m-2" onChange={e => setEmail(e.target.value)} />
+    <button className="bg-red-600 text-white px-4 py-2" onClick={handleNewsletter}>Subscribe</button>
+  </section>
+</div>
+
+); }
+
+export default App;
+
+// --- .env (in server root) --- // MONGO_URI=your_mongodb_connection_string
+
